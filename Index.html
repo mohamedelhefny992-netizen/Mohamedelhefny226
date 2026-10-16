@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>🥛 حاسبة استهلاك اللبن</title>
+<style>
+  :root {
+    --bg: #f2f7fb;
+    --card: #ffffff;
+    --ink: #16324a;
+    --muted: #5f7589;
+    --line: #dbe6ee;
+    --blue: #2b6fd4;
+    --blue-soft: #e6f0fd;
+    --warm: #c9651f;
+    --warm-soft: #fdeede;
+    --pink: #b8407a;
+    --pink-soft: #fbe8f2;
+    --green: #1f8a5b;
+    --green-soft: #e3f5ec;
+    --danger: #c0392b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "SF Arabic", "Geeza Pro", "Segoe UI", Tahoma, Arial, sans-serif;
+    padding: max(16px, env(safe-area-inset-top)) 14px max(24px, env(safe-area-inset-bottom));
+    line-height: 1.5;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  header { text-align: center; padding: 8px 0 18px; }
+  h1 { margin: 0 0 10px; font-size: 1.9rem; font-weight: 800; }
+  .carton {
+    display: inline-block;
+    background: var(--blue-soft);
+    color: var(--blue);
+    border-radius: 999px;
+    padding: 6px 18px;
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+
+  .group {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .group-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; margin-bottom: 8px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .group-head h2 { margin: 0; font-size: 1.3rem; }
+  .tag {
+    font-weight: 700; font-size: .95rem; border-radius: 999px; padding: 4px 12px;
+    white-space: nowrap;
+  }
+  .group.hot .tag { background: var(--warm-soft); color: var(--warm); }
+  .group.juice .tag { background: var(--pink-soft); color: var(--pink); }
+  .group.shake .tag { background: var(--green-soft); color: var(--green); }
+
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; padding: 12px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .row:last-child { border-bottom: 0; padding-bottom: 2px; }
+  .info { flex: 1; min-width: 0; }
+  .name { font-size: 1.15rem; font-weight: 700; }
+  .sub { font-size: .85rem; color: var(--muted); }
+  .sub b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .counter { display: flex; align-items: center; gap: 8px; direction: ltr; }
+  .counter button {
+    width: 52px; height: 52px; border-radius: 14px; border: 0;
+    font-size: 1.9rem; font-weight: 700; line-height: 1; cursor: pointer;
+    background: var(--blue-soft); color: var(--blue);
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  .counter button.plus { background: var(--blue); color: #fff; }
+  .counter button:active { transform: scale(.93); }
+  .counter input {
+    width: 72px; height: 52px; text-align: center;
+    font-size: 1.6rem; font-weight: 800; color: var(--ink);
+    border: 2px solid var(--line); border-radius: 14px; background: #fff;
+    font-family: inherit; font-variant-numeric: tabular-nums;
+  }
+  .counter input:focus, button:focus-visible { outline: 3px solid #9cc2f5; outline-offset: 1px; }
+
+  .result {
+    background: var(--ink); color: #fff;
+    border-radius: 20px; padding: 20px; margin-top: 6px;
+  }
+  .result h2 { margin: 0 0 14px; font-size: 1.25rem; }
+  .big { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .box { background: rgba(255,255,255,.1); border-radius: 14px; padding: 12px 14px; }
+  .box .label { font-size: .9rem; color: #b9cde0; }
+  .box .val { font-size: 2.3rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .box .unit { font-size: 1rem; font-weight: 600; color: #b9cde0; margin-inline-start: 4px; }
+  .cartons { display: flex; flex-direction: column; gap: 8px; }
+  .line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    background: rgba(255,255,255,.1); border-radius: 12px; padding: 10px 14px; gap: 10px;
+  }
+  .line span:first-child { color: #d6e4f0; }
+  .line strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+
+  .bar { height: 12px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; margin: 14px 0 4px; }
+  .bar i { display: block; height: 100%; width: 0; background: #7fd1ff; border-radius: 99px; transition: width .2s; }
+  .barlabel { font-size: .85rem; color: #b9cde0; }
+
+  .actions { display: flex; gap: 10px; margin-top: 16px; }
+  .actions button {
+    flex: 1; height: 54px; border-radius: 14px; border: 0; cursor: pointer;
+    font-size: 1.1rem; font-weight: 700; font-family: inherit;
+    touch-action: manipulation;
+  }
+  #copyBtn { background: #7fd1ff; color: var(--ink); }
+  #resetBtn { background: rgba(255,255,255,.14); color: #fff; }
+  .actions button:active { transform: scale(.97); }
+
+  #toast {
+    position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom));
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green); color: #fff; padding: 12px 22px;
+    border-radius: 999px; font-weight: 700; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s; z-index: 10;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  #toast.err { background: var(--danger); }
+
+  @media (max-width: 420px) {
+    h1 { font-size: 1.6rem; }
+    .counter button { width: 46px; height: 46px; }
+    .counter input { width: 60px; height: 46px; font-size: 1.4rem; }
+    .box .val { font-size: 1.9rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🥛 حاسبة استهلاك اللبن</h1>
+    <div class="carton">سعة علبة اللبن: 1500 مل</div>
+  </header>
+
+  <main id="groups"></main>
+
+  <section class="result" aria-live="polite">
+    <h2>إجمالي الاستهلاك</h2>
+    <div class="big">
+      <div class="box"><div class="label">بالمللي</div><div><span class="val" id="totalMl">0</span><span class="unit">مل</span></div></div>
+      <div class="box"><div class="label">باللتر</div><div><span class="val" id="totalL">0</span><span class="unit">لتر</span></div></div>
+    </div>
+    <div class="cartons">
+      <div class="line"><span>ما يعادل عدد العلب</span><strong id="cartonsEq">0.00 علبة</strong></div>
+      <div class="line"><span>علب كاملة مستهلكة</span><strong id="fullCartons">0</strong></div>
+      <div class="line"><span>المستهلك من العلبة التالية</span><strong id="remainder">0 مل</strong></div>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+    <div class="barlabel" id="barLabel">العلبة الحالية: 0 من 1500 مل</div>
+    <div class="actions">
+      <button id="copyBtn" type="button">نسخ التقرير</button>
+      <button id="resetBtn" type="button">تصفير الحساب</button>
+    </div>
+  </section>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+(function () {
+  var CARTON_ML = 1500;
+  var GROUPS = [
+    { id: 'hot', cls: 'hot', title: 'المشروبات الساخنة', ml: 100, items: [
+      'شاي بلبن', 'نسكافيه', 'قهوة بندق', 'كابتشينو', 'قهوة فرنساوي', 'هوت شوكليت'
+    ]},
+    { id: 'juice', cls: 'juice', title: 'العصائر باللبن', ml: 150, items: [
+      'فراولة باللبن', 'جوافة باللبن', 'بلح باللبن'
+    ]},
+    { id: 'shake', cls: 'shake', title: 'الميلك شيك', ml: 200, items: [
+      'ميلك شيك'
+    ]}
+  ];
+
+  var drinks = [];
+  GROUPS.forEach(function (g) {
+    g.items.forEach(function (name) {
+      drinks.push({ name: name, ml: g.ml, count: 0, group: g });
+    });
+  });
+
+  var STORE_KEY = 'milk-calc-v1';
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(drinks.map(function (d) { return d.count; }))); } catch (e) {}
+  }
+  function load() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (Array.isArray(arr) && arr.length === drinks.length) {
+        arr.forEach(function (n, i) { n = parseInt(n, 10); drinks[i].count = n > 0 ? n : 0; });
+      }
+    } catch (e) {}
+  }
+
+  function $(id) { return document.getElementById(id); }
+  function fmt(n) { return String(n); }
+  function toEnDigits(s) {
+    return String(s).replace(/[٠-٩]/g, function (c) { return c.charCodeAt(0) - 1632; })
+                    .replace(/[۰-۹]/g, function (c) { return c.charCodeAt(0) - 1776; });
+  }
+  function parseCount(v) {
+    var n = parseInt(toEnDigits(v).replace(/[^0-9]/g, ''), 10);
+    return isNaN(n) ? 0 : Math.min(n, 99999);
+  }
+
+  // ---------- Build UI ----------
+  var rowRefs = [];
+  var container = $('groups');
+  var idx = 0;
+  GROUPS.forEach(function (g) {
+    var sec = document.createElement('section');
+    sec.className = 'group ' + g.cls;
+    sec.innerHTML = '<div class="group-head"><h2>' + g.title + '</h2><span class="tag">' + g.ml + ' مل لكل أوردر</span></div>';
+    g.items.forEach(function () {
+      var i = idx++;
+      var d = drinks[i];
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML =
+        '<div class="info"><div class="name">' + d.name + '</div>' +
+        '<div class="sub">اللبن لكل أوردر: <b>' + d.ml + ' مل</b> · الاستهلاك: <b class="used">0 مل</b></div></div>' +
+        '<div class="counter">' +
+        '<button type="button" class="minus" aria-label="نقص ' + d.name + '">−</button>' +
+        '<input type="text" inputmode="numeric" pattern="[0-9]*" value="0" aria-label="عدد أوردرات ' + d.name + '">' +
+        '<button type="button" class="plus" aria-label="زيادة ' + d.name + '">+</button>' +
+        '</div>';
+      sec.appendChild(row);
+      var input = row.querySelector('input');
+      var used = row.querySelector('.used');
+      rowRefs.push({ input: input, used: used });
+
+      row.querySelector('.minus').addEventListener('click', function () { setCount(i, d.count - 1); });
+      row.querySelector('.plus').addEventListener('click', function () { setCount(i, d.count + 1); });
+      input.addEventListener('input', function () {
+        var n = parseCount(input.value);
+        d.count = n;
+        // keep what the user typed unless it has invalid characters
+        var clean = n === 0 && input.value === '' ? '' : String(n);
+        if (input.value !== clean) input.value = clean;
+        update(false);
+      });
+      input.addEventListener('focus', function () { setTimeout(function () { input.select(); }, 0); });
+      input.addEventListener('blur', function () { input.value = String(d.count); });
+    });
+    container.appendChild(sec);
+  });
+
+  function setCount(i, n) {
+    n = Math.max(0, Math.min(99999, n));
+    drinks[i].count = n;
+    rowRefs[i].input.value = String(n);
+    update(false);
+  }
+
+  // ---------- Calculation ----------
+  function totals() {
+    var total = 0;
+    drinks.forEach(function (d) { total += d.count * d.ml; });
+    var full = Math.floor(total / CARTON_ML);
+    var rem = total - full * CARTON_ML;
+    return { total: total, liters: total / 1000, cartons: total / CARTON_ML, full: full, rem: rem };
+  }
+
+  function update() {
+    drinks.forEach(function (d, i) {
+      rowRefs[i].used.textContent = fmt(d.count * d.ml) + ' مل';
+    });
+    var t = totals();
+    $('totalMl').textContent = fmt(t.total);
+    $('totalL').textContent = (Math.round(t.liters * 100) / 100).toString();
+    $('cartonsEq').textContent = t.cartons.toFixed(2) + ' علبة';
+    $('fullCartons').textContent = fmt(t.full);
+    $('remainder').textContent = fmt(t.rem) + ' مل';
+    $('barFill').style.width = (t.rem / CARTON_ML * 100) + '%';
+    $('barLabel').textContent = 'العلبة الحالية: ' + t.rem + ' من ' + CARTON_ML + ' مل';
+    save();
+  }
+
+  // ---------- Report ----------
+  function buildReport() {
+    var t = totals();
+    var lines = ['🥛 تقرير استهلاك اللبن', '------------------------'];
+    GROUPS.forEach(function (g) {
+      lines.push('', g.title + ' (' + g.ml + ' مل للأوردر):');
+      drinks.forEach(function (d) {
+        if (d.group === g) {
+          lines.push('• ' + d.name + ': ' + d.count + ' أوردر = ' + (d.count * d.ml) + ' مل');
+        }
+      });
+    });
+    lines.push('', '------------------------');
+    lines.push('الإجمالي: ' + t.total + ' مل = ' + (Math.round(t.liters * 100) / 100) + ' لتر');
+    lines.push('يعادل: ' + t.cartons.toFixed(2) + ' علبة (العلبة = ' + CARTON_ML + ' مل)');
+    lines.push('علب كاملة: ' + t.full + ' + المتبقي: ' + t.rem + ' مل');
+    return lines.join('\n');
+  }
+
+  var toastTimer;
+  function toast(msg, isErr) {
+    var el = $('toast');
+    el.textContent = msg;
+    el.className = 'show' + (isErr ? ' err' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.className = ''; }, 2200);
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  $('copyBtn').addEventListener('click', function () {
+    var text = buildReport();
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(
+        function () { toast('تم نسخ التقرير ✓'); },
+        function () {
+          if (fallbackCopy(text)) toast('تم نسخ التقرير ✓');
+          else toast('تعذّر النسخ', true);
+        }
+      );
+    } else if (fallbackCopy(text)) {
+      toast('تم نسخ التقرير ✓');
+    } else {
+      toast('تعذّر النسخ', true);
+    }
+  });
+
+  $('resetBtn').addEventListener('click', function () {
+    var any = drinks.some(function (d) { return d.count > 0; });
+    if (any && !window.confirm('هل تريد تصفير جميع الأعداد؟')) return;
+    drinks.forEach(function (d, i) { d.count = 0; rowRefs[i].input.value = '0'; });
+    update();
+    toast('تم تصفير الحساب');
+  });
+
+  load();
+  drinks.forEach(function (d, i) { rowRefs[i].input.value = String(d.count); });
+  update();
+})();
+</script>
+</body>
+</html>
